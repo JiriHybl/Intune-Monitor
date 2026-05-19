@@ -148,7 +148,7 @@ IntuneAuditLogs
 | where OperationName =~ "DeviceAction_wipe"
 | project
     TimeGenerated,
-    DeviceName  = tostring(TargetDisplayNames[0]),
+    DeviceName  = tostring(todynamic(TargetDisplayNames)[0]),
     InitiatedBy = ActorUPN,
     Result      = ActivityResultType,
     Category
@@ -199,7 +199,7 @@ IntuneAuditLogs
 | where OperationName =~ "DeviceAction_retire"
 | project
     TimeGenerated,
-    DeviceName  = tostring(TargetDisplayNames[0]),
+    DeviceName  = tostring(todynamic(TargetDisplayNames)[0]),
     InitiatedBy = ActorUPN,
     Result      = ActivityResultType,
     Category
@@ -255,7 +255,7 @@ IntuneAuditLogs
 | project
     TimeGenerated,
     Action      = OperationName,
-    DeviceName  = tostring(TargetDisplayNames[0]),
+    DeviceName  = tostring(todynamic(TargetDisplayNames)[0]),
     InitiatedBy = ActorUPN,
     Result      = ActivityResultType
           '''
