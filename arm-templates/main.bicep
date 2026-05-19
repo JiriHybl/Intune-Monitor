@@ -8,7 +8,7 @@ targetScope = 'resourceGroup'
 // ── Parameters ──────────────────────────────────────────────
 
 @description('Resource ID of the existing Log Analytics Workspace')
-param logAnalyticsWorkspaceId string
+param logAnalyticsWorkspaceResourceId string
 
 @description('Teams Incoming Webhook URL for alert notifications')
 @secure()
@@ -55,7 +55,7 @@ module alertRules 'alert-rules.bicep' = {
   name: 'deploy-alert-rules'
   params: {
     location: location
-    logAnalyticsWorkspaceId: logAnalyticsWorkspaceId
+    logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
     actionGroupResourceId: actionGroup.outputs.actionGroupResourceId
   }
 }

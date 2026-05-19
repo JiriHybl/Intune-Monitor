@@ -9,7 +9,7 @@
 // ============================================================
 
 param location string
-param logAnalyticsWorkspaceId string
+param logAnalyticsWorkspaceResourceId string
 param actionGroupResourceId string
 
 // Evaluation frequency and window for all rules
@@ -32,7 +32,7 @@ resource alertEnrollmentSuccess 'Microsoft.Insights/scheduledQueryRules@2022-06-
     enabled: true
     evaluationFrequency: evaluationFrequency
     windowSize: windowSize
-    scopes: [ logAnalyticsWorkspaceId ]
+    scopes: [ logAnalyticsWorkspaceResourceId ]
     criteria: {
       allOf: [
         {
@@ -85,7 +85,7 @@ resource alertEnrollmentFailure 'Microsoft.Insights/scheduledQueryRules@2022-06-
     enabled: true
     evaluationFrequency: evaluationFrequency
     windowSize: windowSize
-    scopes: [ logAnalyticsWorkspaceId ]
+    scopes: [ logAnalyticsWorkspaceResourceId ]
     criteria: {
       allOf: [
         {
@@ -138,7 +138,7 @@ resource alertDeviceWipe 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
     enabled: true
     evaluationFrequency: evaluationFrequency
     windowSize: windowSize
-    scopes: [ logAnalyticsWorkspaceId ]
+    scopes: [ logAnalyticsWorkspaceResourceId ]
     criteria: {
       allOf: [
         {
@@ -189,7 +189,7 @@ resource alertDeviceRetire 'Microsoft.Insights/scheduledQueryRules@2022-06-15' =
     enabled: true
     evaluationFrequency: evaluationFrequency
     windowSize: windowSize
-    scopes: [ logAnalyticsWorkspaceId ]
+    scopes: [ logAnalyticsWorkspaceResourceId ]
     criteria: {
       allOf: [
         {
@@ -240,7 +240,7 @@ resource alertDeviceReset 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = 
     enabled: true
     evaluationFrequency: evaluationFrequency
     windowSize: windowSize
-    scopes: [ logAnalyticsWorkspaceId ]
+    scopes: [ logAnalyticsWorkspaceResourceId ]
     criteria: {
       allOf: [
         {

@@ -123,7 +123,7 @@ Edit `parameters.json` with your values:
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "logAnalyticsWorkspaceId": {
+    "logAnalyticsWorkspaceResourceId": {
       "value": "/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>"
     },
     "teamsWebhookUrl": {
@@ -293,7 +293,7 @@ Configure these under **Repository → Settings → Secrets and variables → Ac
 | `AZURE_SUBSCRIPTION_ID` | Target subscription ID |
 | `TEAMS_WEBHOOK_URL` | Teams Incoming Webhook URL |
 | `ALERT_EMAIL_ADDRESS` | Admin notification email |
-| `LA_WORKSPACE_ID` | Full Log Analytics Workspace resource ID |
+| `LA_WORKSPACE_RESOURCE_ID` | Full Log Analytics Workspace resource ID |
 
 ### Create the Service Principal (run once from your workstation)
 
