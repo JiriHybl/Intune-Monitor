@@ -1,0 +1,51 @@
+{
+  "schemaId": "azureMonitorCommonAlertSchema",
+  "data": {
+    "essentials": {
+      "alertId": "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.AlertsManagement/alerts/test-alert-id",
+      "alertRule": "Intune — Device Wipe Initiated",
+      "severity": "Sev1",
+      "signalType": "Log",
+      "monitorCondition": "Fired",
+      "monitoringService": "Log Analytics",
+      "alertTargetIDs": [
+        "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/RG-LogAnalytics/providers/Microsoft.OperationalInsights/workspaces/LA-WS-Endpoints"
+      ],
+      "configurationItems": [],
+      "originAlertId": "test-origin-alert-id",
+      "firedDateTime": "2026-05-19T21:00:00Z",
+      "resolvedDateTime": null,
+      "description": "Device Wipe action detected in Intune. Immediate review required.",
+      "essentialsVersion": "1.0",
+      "alertContextVersion": "1.0"
+    },
+    "alertContext": {
+      "conditionType": "LogQueryCriteria",
+      "condition": {
+        "windowSize": "PT5M",
+        "allOf": [
+          {
+            "searchQuery": "IntuneAuditLogs\n| where TimeGenerated > ago(5m)\n| where OperationName =~ \"DeviceAction_wipe\"\n| extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'[\"\\[\\]]', \"\")\n| extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)\n| project TimeGenerated, DeviceName, InitiatedBy, Result = ResultType, Category",
+            "metricMeasureColumn": null,
+            "targetResourceTypes": "Microsoft.OperationalInsights/workspaces",
+            "operator": "GreaterThan",
+            "threshold": "0",
+            "timeAggregation": "Count",
+            "dimensions": [],
+            "metricValue": 1,
+            "failingPeriods": {
+              "numberOfEvaluationPeriods": 1,
+              "minFailingPeriodsToAlert": 1
+            },
+            "LinkToFilteredSearchResultsUI": "https://portal.azure.com#blade/Microsoft_Azure_Monitoring_Logs/LogsBlade",
+            "LinkToSearchResultsUI": "https://portal.azure.com#blade/Microsoft_Azure_Monitoring_Logs/LogsBlade",
+            "LinkToFilteredSearchResultsAPI": "https://api.loganalytics.io/v1/workspaces/00000000-0000-0000-0000-000000000000/query",
+            "LinkToSearchResultsAPI": "https://api.loganalytics.io/v1/workspaces/00000000-0000-0000-0000-000000000000/query"
+          }
+        ],
+        "windowStartTime": "2026-05-19T20:55:00Z",
+        "windowEndTime": "2026-05-19T21:00:00Z"
+      }
+    }
+  }
+}
