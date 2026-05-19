@@ -12,7 +12,7 @@
 #   AZURE_SUBSCRIPTION_ID    - Target subscription ID
 #   TEAMS_WEBHOOK_URL        - Teams Incoming Webhook URL
 #   ALERT_EMAIL_ADDRESS      - Admin notification email
-#   LA_WORKSPACE_ID          - Full resource ID of Log Analytics Workspace
+#   LA_WORKSPACE_RESOURCE_ID          - Full resource ID of Log Analytics Workspace
 #
 # Service Principal setup (run once from your workstation):
 #   az ad sp create-for-rbac `
@@ -103,7 +103,7 @@ jobs:
             '$schema'      = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
             contentVersion = '1.0.0.0'
             parameters     = @{
-              logAnalyticsWorkspaceId = @{ value = '${{ secrets.LA_WORKSPACE_ID }}' }
+              logAnalyticsWorkspaceResourceId = @{ value = '${{ secrets.LA_WORKSPACE_RESOURCE_ID }}' }
               teamsWebhookUrl         = @{ value = '${{ secrets.TEAMS_WEBHOOK_URL }}' }
               alertEmailAddress       = @{ value = '${{ secrets.ALERT_EMAIL_ADDRESS }}' }
               location                = @{ value = '${{ env.LOCATION }}' }
@@ -164,7 +164,7 @@ jobs:
             '$schema'      = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
             contentVersion = '1.0.0.0'
             parameters     = @{
-              logAnalyticsWorkspaceId = @{ value = '${{ secrets.LA_WORKSPACE_ID }}' }
+              logAnalyticsWorkspaceResourceId = @{ value = '${{ secrets.LA_WORKSPACE_RESOURCE_ID }}' }
               teamsWebhookUrl         = @{ value = '${{ secrets.TEAMS_WEBHOOK_URL }}' }
               alertEmailAddress       = @{ value = '${{ secrets.ALERT_EMAIL_ADDRESS }}' }
               location                = @{ value = '${{ env.LOCATION }}' }
@@ -210,7 +210,7 @@ jobs:
             '$schema'      = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
             contentVersion = '1.0.0.0'
             parameters     = @{
-              logAnalyticsWorkspaceId = @{ value = '${{ secrets.LA_WORKSPACE_ID }}' }
+              logAnalyticsWorkspaceResourceId = @{ value = '${{ secrets.LA_WORKSPACE_RESOURCE_ID }}' }
               teamsWebhookUrl         = @{ value = '${{ secrets.TEAMS_WEBHOOK_URL }}' }
               alertEmailAddress       = @{ value = '${{ secrets.ALERT_EMAIL_ADDRESS }}' }
               location                = @{ value = '${{ env.LOCATION }}' }
