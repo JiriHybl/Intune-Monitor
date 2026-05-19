@@ -1,0 +1,15 @@
+// kql-device-retire.kql
+// Alert: Intune Device Retire Initiated
+// Table: IntuneAuditLogs
+// Severity: Sev1
+// Frequency: 5 min
+
+IntuneAuditLogs
+| where TimeGenerated > ago(5m)
+| where OperationName =~ "DeviceAction_retire"
+| project
+    TimeGenerated,
+    DeviceName  = tostring(TargetDisplayNames[0]),
+    InitiatedBy = ActorUPN,
+    Result      = ActivityResultType,
+    Category

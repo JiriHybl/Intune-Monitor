@@ -1,0 +1,21 @@
+# Parameters file — contains webhook URLs and email addresses
+arm-templates/parameters/parameters.json
+
+# Azure CLI temporary files
+.azure/
+
+# PowerShell
+*.ps1xml
+
+# Compiled Bicep ARM JSON (generated, not source)
+arm-templates/*.json
+!arm-templates/parameters/parameters.example.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace

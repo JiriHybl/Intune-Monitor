@@ -1,0 +1,262 @@
+# ==============================================================
+# deploy.yml — GitHub Actions Deployment Pipeline
+#
+# Runs on: windows-latest (pure PowerShell, no bash dependency)
+# Triggers: push to main affecting templates or scripts,
+#           or manual dispatch
+#
+# Required GitHub Secrets:
+#   AZURE_CLIENT_ID          - Service principal app ID
+#   AZURE_CLIENT_SECRET      - Service principal secret
+#   AZURE_TENANT_ID          - Azure AD tenant ID
+#   AZURE_SUBSCRIPTION_ID    - Target subscription ID
+#   TEAMS_WEBHOOK_URL        - Teams Incoming Webhook URL
+#   ALERT_EMAIL_ADDRESS      - Admin notification email
+#   LA_WORKSPACE_ID          - Full resource ID of Log Analytics Workspace
+#
+# Service Principal setup (run once from your workstation):
+#   az ad sp create-for-rbac `
+#     --name "sp-intune-monitor-deploy" `
+#     --role Contributor `
+#     --scopes /subscriptions/<subscription-id> `
+#     --output json
+# ==============================================================
+
+name: Deploy Intune Monitor
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'arm-templates/**'
+      - 'scripts/deploy.ps1'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'lab'
+        type: choice
+        options:
+          - lab
+          - production
+      whatif:
+        description: 'Run What-If only (no changes deployed)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+env:
+  RESOURCE_GROUP: rg-intune-monitoring
+  LOCATION: westeurope
+
+jobs:
+
+  # ── Job 1: Validate ─────────────────────────────────────────
+
+  validate:
+    name: Validate Templates
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Bicep CLI
+        shell: pwsh
+        run: az bicep install
+
+      - name: Bicep Lint
+        shell: pwsh
+        run: |
+          Write-Host "Linting Bicep templates..." -ForegroundColor Cyan
+          $templates = @(
+            'arm-templates\main.bicep',
+            'arm-templates\logicapp.bicep',
+            'arm-templates\actiongroup.bicep',
+            'arm-templates\alert-rules.bicep'
+          )
+          foreach ($template in $templates) {
+            Write-Host "  Building: $template"
+            az bicep build --file $template
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Bicep build failed for: $template"
+              exit 1
+            }
+          }
+          Write-Host "[OK] All templates valid" -ForegroundColor Green
+
+      - name: Write Parameters File
+        shell: pwsh
+        run: |
+          $params = @{
+            '$schema'      = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
+            contentVersion = '1.0.0.0'
+            parameters     = @{
+              logAnalyticsWorkspaceId = @{ value = '${{ secrets.LA_WORKSPACE_ID }}' }
+              teamsWebhookUrl         = @{ value = '${{ secrets.TEAMS_WEBHOOK_URL }}' }
+              alertEmailAddress       = @{ value = '${{ secrets.ALERT_EMAIL_ADDRESS }}' }
+              location                = @{ value = '${{ env.LOCATION }}' }
+              logicAppName            = @{ value = 'la-intune-alerts' }
+              actionGroupName         = @{ value = 'ag-intune-admins' }
+              actionGroupShortName    = @{ value = 'IntuneAdmin' }
+            }
+          }
+          $params | ConvertTo-Json -Depth 5 | Set-Content 'arm-templates\parameters\parameters.json' -Encoding UTF8
+          Write-Host "[OK] Parameters file written" -ForegroundColor Green
+
+      - name: Ensure Resource Group Exists
+        shell: pwsh
+        run: |
+          $exists = az group exists --name ${{ env.RESOURCE_GROUP }}
+          if ($exists -eq 'false') {
+            Write-Host "Creating resource group: ${{ env.RESOURCE_GROUP }}"
+            az group create --name ${{ env.RESOURCE_GROUP }} --location ${{ env.LOCATION }} | Out-Null
+          }
+
+      - name: Validate Deployment
+        shell: pwsh
+        run: |
+          Write-Host "Validating deployment..." -ForegroundColor Cyan
+          az deployment group validate `
+            --resource-group ${{ env.RESOURCE_GROUP }} `
+            --template-file arm-templates\main.bicep `
+            --parameters arm-templates\parameters\parameters.json
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Deployment validation failed"
+            exit 1
+          }
+          Write-Host "[OK] Validation passed" -ForegroundColor Green
+
+  # ── Job 2: What-If ──────────────────────────────────────────
+
+  whatif:
+    name: What-If Preview
+    runs-on: windows-latest
+    needs: validate
+    if: github.event.inputs.whatif == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Write Parameters File
+        shell: pwsh
+        run: |
+          $params = @{
+            '$schema'      = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
+            contentVersion = '1.0.0.0'
+            parameters     = @{
+              logAnalyticsWorkspaceId = @{ value = '${{ secrets.LA_WORKSPACE_ID }}' }
+              teamsWebhookUrl         = @{ value = '${{ secrets.TEAMS_WEBHOOK_URL }}' }
+              alertEmailAddress       = @{ value = '${{ secrets.ALERT_EMAIL_ADDRESS }}' }
+              location                = @{ value = '${{ env.LOCATION }}' }
+              logicAppName            = @{ value = 'la-intune-alerts' }
+              actionGroupName         = @{ value = 'ag-intune-admins' }
+              actionGroupShortName    = @{ value = 'IntuneAdmin' }
+            }
+          }
+          $params | ConvertTo-Json -Depth 5 | Set-Content 'arm-templates\parameters\parameters.json' -Encoding UTF8
+
+      - name: Run What-If
+        shell: pwsh
+        run: |
+          az deployment group what-if `
+            --resource-group ${{ env.RESOURCE_GROUP }} `
+            --template-file arm-templates\main.bicep `
+            --parameters arm-templates\parameters\parameters.json
+
+  # ── Job 3: Deploy ───────────────────────────────────────────
+
+  deploy:
+    name: Deploy
+    runs-on: windows-latest
+    needs: validate
+    if: github.event.inputs.whatif != 'true'
+    environment: ${{ github.event.inputs.environment || 'lab' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Write Parameters File
+        shell: pwsh
+        run: |
+          $params = @{
+            '$schema'      = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
+            contentVersion = '1.0.0.0'
+            parameters     = @{
+              logAnalyticsWorkspaceId = @{ value = '${{ secrets.LA_WORKSPACE_ID }}' }
+              teamsWebhookUrl         = @{ value = '${{ secrets.TEAMS_WEBHOOK_URL }}' }
+              alertEmailAddress       = @{ value = '${{ secrets.ALERT_EMAIL_ADDRESS }}' }
+              location                = @{ value = '${{ env.LOCATION }}' }
+              logicAppName            = @{ value = 'la-intune-alerts' }
+              actionGroupName         = @{ value = 'ag-intune-admins' }
+              actionGroupShortName    = @{ value = 'IntuneAdmin' }
+            }
+          }
+          $params | ConvertTo-Json -Depth 5 | Set-Content 'arm-templates\parameters\parameters.json' -Encoding UTF8
+
+      - name: Deploy
+        id: deploy
+        shell: pwsh
+        run: |
+          $deploymentName = "intune-monitor-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+
+          $output = az deployment group create `
+            --name $deploymentName `
+            --resource-group ${{ env.RESOURCE_GROUP }} `
+            --template-file arm-templates\main.bicep `
+            --parameters arm-templates\parameters\parameters.json `
+            --output json | ConvertFrom-Json
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Deployment failed"
+            exit 1
+          }
+
+          $logicAppName  = $output.properties.outputs.logicAppName.value
+          $actionGroupId = $output.properties.outputs.actionGroupResourceId.value
+
+          echo "deployment_name=$deploymentName" >> $env:GITHUB_OUTPUT
+          echo "logic_app_name=$logicAppName"    >> $env:GITHUB_OUTPUT
+          echo "action_group_id=$actionGroupId"  >> $env:GITHUB_OUTPUT
+
+          Write-Host "[OK] Deployment succeeded: $deploymentName" -ForegroundColor Green
+
+      - name: Deployment Summary
+        shell: pwsh
+        run: |
+          @"
+          ## Deployment Summary
+          | Field | Value |
+          |---|---|
+          | Deployment Name | ${{ steps.deploy.outputs.deployment_name }} |
+          | Logic App       | ${{ steps.deploy.outputs.logic_app_name }} |
+          | Resource Group  | ${{ env.RESOURCE_GROUP }} |
+          | Environment     | ${{ github.event.inputs.environment || 'lab' }} |
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append

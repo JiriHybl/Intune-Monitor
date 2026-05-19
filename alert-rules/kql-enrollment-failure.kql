@@ -1,0 +1,17 @@
+// kql-enrollment-failure.kql
+// Alert: Intune Device Enrollment Failure
+// Table: IntuneOperationalLogs
+// Severity: Sev2
+// Frequency: 5 min
+
+IntuneOperationalLogs
+| where TimeGenerated > ago(5m)
+| where OperationName =~ "Enrollment"
+| extend ParsedProperties = parse_json(Properties)
+| where tostring(ParsedProperties.EnrollmentState) =~ "Failed"
+| project
+    TimeGenerated,
+    DeviceName        = tostring(ParsedProperties.DeviceName),
+    UserPrincipalName = tostring(ParsedProperties.UserPrincipalName),
+    OS                = tostring(ParsedProperties.OS),
+    FailureReason     = tostring(ParsedProperties.FailureReason)

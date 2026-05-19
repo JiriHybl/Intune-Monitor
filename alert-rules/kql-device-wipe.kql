@@ -1,0 +1,18 @@
+// kql-device-wipe.kql
+// Alert: Intune Device Wipe Initiated
+// Table: IntuneAuditLogs
+// Severity: Sev1
+// Frequency: 5 min
+//
+// NOTE: Validate OperationName by running:
+// IntuneAuditLogs | summarize count() by OperationName
+
+IntuneAuditLogs
+| where TimeGenerated > ago(5m)
+| where OperationName =~ "DeviceAction_wipe"
+| project
+    TimeGenerated,
+    DeviceName  = tostring(TargetDisplayNames[0]),
+    InitiatedBy = ActorUPN,
+    Result      = ActivityResultType,
+    Category

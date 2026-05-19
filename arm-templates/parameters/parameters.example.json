@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "logAnalyticsWorkspaceId": {
+      "value": "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>"
+    },
+    "teamsWebhookUrl": {
+      "value": "https://<your-tenant>.webhook.office.com/webhookb2/..."
+    },
+    "alertEmailAddress": {
+      "value": "intune-admins@yourdomain.com"
+    },
+    "location": {
+      "value": "westeurope"
+    },
+    "logicAppName": {
+      "value": "la-intune-alerts"
+    },
+    "actionGroupName": {
+      "value": "ag-intune-admins"
+    },
+    "actionGroupShortName": {
+      "value": "IntuneAdmin"
+    }
+  }
+}

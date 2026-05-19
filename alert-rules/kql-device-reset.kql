@@ -1,0 +1,19 @@
+// kql-device-reset.kql
+// Alert: Intune Fresh Start / Autopilot Reset
+// Table: IntuneAuditLogs
+// Severity: Sev2
+// Frequency: 5 min
+
+IntuneAuditLogs
+| where TimeGenerated > ago(5m)
+| where OperationName in~ (
+    "DeviceAction_freshStart",
+    "DeviceAction_autopilotReset",
+    "DeviceAction_resetPasscode"
+  )
+| project
+    TimeGenerated,
+    Action      = OperationName,
+    DeviceName  = tostring(TargetDisplayNames[0]),
+    InitiatedBy = ActorUPN,
+    Result      = ActivityResultType

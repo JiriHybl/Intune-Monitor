@@ -1,0 +1,20 @@
+// kql-enrollment-success.kql
+// Alert: Intune Device Enrollment Success
+// Table: IntuneOperationalLogs
+// Severity: Sev3
+// Frequency: 5 min
+//
+// NOTE: Validate EnrollmentState values against your tenant data.
+// Run: IntuneOperationalLogs | summarize count() by tostring(parse_json(Properties).EnrollmentState)
+
+IntuneOperationalLogs
+| where TimeGenerated > ago(5m)
+| where OperationName =~ "Enrollment"
+| extend ParsedProperties = parse_json(Properties)
+| where tostring(ParsedProperties.EnrollmentState) =~ "Enrolled"
+| project
+    TimeGenerated,
+    DeviceName        = tostring(ParsedProperties.DeviceName),
+    UserPrincipalName = tostring(ParsedProperties.UserPrincipalName),
+    OS                = tostring(ParsedProperties.OS),
+    EnrollmentType    = tostring(ParsedProperties.EnrollmentType)
