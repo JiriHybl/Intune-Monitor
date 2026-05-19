@@ -146,11 +146,13 @@ resource alertDeviceWipe 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
 IntuneAuditLogs
 | where TimeGenerated > ago(5m)
 | where OperationName =~ "DeviceAction_wipe"
+| extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'["\[\]]', "")
+| extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)
 | project
     TimeGenerated,
-    DeviceName  = tostring(todynamic(TargetDisplayNames)[0]),
-    InitiatedBy = ActorUPN,
-    Result      = ActivityResultType,
+    DeviceName,
+    InitiatedBy,
+    Result    = ResultType,
     Category
           '''
           timeAggregation: 'Count'
@@ -197,11 +199,13 @@ resource alertDeviceRetire 'Microsoft.Insights/scheduledQueryRules@2022-06-15' =
 IntuneAuditLogs
 | where TimeGenerated > ago(5m)
 | where OperationName =~ "DeviceAction_retire"
+| extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'["\[\]]', "")
+| extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)
 | project
     TimeGenerated,
-    DeviceName  = tostring(todynamic(TargetDisplayNames)[0]),
-    InitiatedBy = ActorUPN,
-    Result      = ActivityResultType,
+    DeviceName,
+    InitiatedBy,
+    Result    = ResultType,
     Category
           '''
           timeAggregation: 'Count'
@@ -252,12 +256,14 @@ IntuneAuditLogs
     "DeviceAction_autopilotReset",
     "DeviceAction_resetPasscode"
   )
+| extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'["\[\]]', "")
+| extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)
 | project
     TimeGenerated,
     Action      = OperationName,
-    DeviceName  = tostring(todynamic(TargetDisplayNames)[0]),
-    InitiatedBy = ActorUPN,
-    Result      = ActivityResultType
+    DeviceName,
+    InitiatedBy,
+    Result      = ResultType
           '''
           timeAggregation: 'Count'
           operator: 'GreaterThan'
