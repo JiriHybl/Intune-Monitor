@@ -11,7 +11,7 @@
 #   -WhatIf                                      (dry run, no changes made)
 # ==============================================================
 
-[CmdletBinding(SupportsShouldProcess)]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
     [string]$ParametersFile,
