@@ -4,8 +4,8 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Microsoft Intune (Tenant Admin)                                  │
-│                                                                  │
+│ Microsoft Intune (Tenant Admin)                                 │
+│                                                                 │
 │  Diagnostic Settings                                            │
 │  ├── AuditLogs          (Wipe, Retire, Fresh Start, Reset)      │
 │  └── OperationalLogs    (Enrollment Success / Failure)          │
@@ -13,8 +13,8 @@
                            │ 5–15 min ingestion delay
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ Log Analytics Workspace (existing)                               │
-│                                                                  │
+│ Log Analytics Workspace (existing)                              │
+│                                                                 │
 │  Tables:                                                        │
 │  ├── IntuneAuditLogs                                            │
 │  ├── IntuneOperationalLogs                                      │
@@ -24,7 +24,7 @@
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Azure Monitor — Scheduled Query Alert Rules (5 rules)           │
-│                                                                  │
+│                                                                 │
 │  ├── intune-enrollment-success   (Sev3)                         │
 │  ├── intune-enrollment-failure   (Sev2)                         │
 │  ├── intune-device-wipe          (Sev1)                         │
@@ -34,8 +34,8 @@
                            │ On threshold exceeded (>0 rows)
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ Action Group: ag-intune-admins                                   │
-│                                                                  │
+│ Action Group: ag-intune-admins                                  │
+│                                                                 │
 │  ├── Email → intune-admins@domain.com                           │
 │  └── Logic App → la-intune-alerts                               │
 └─────────────┬───────────────────────────────────────────────────┘
@@ -53,12 +53,12 @@
                            ┌────────────────────────────────────┐
                            │ Microsoft Teams                    │
                            │                                    │
-                           │  Adaptive Card with:              │
-                           │  • Alert rule name                │
-                           │  • Severity (colour-coded)        │
-                           │  • Fired timestamp                │
-                           │  • KQL query                      │
-                           │  • Link to Log Analytics          │
+                           │  Adaptive Card with:               │
+                           │  • Alert rule name                 │
+                           │  • Severity (colour-coded)         │
+                           │  • Fired timestamp                 │
+                           │  • KQL query                       │
+                           │  • Link to Log Analytics           │
                            └────────────────────────────────────┘
 ```
 
