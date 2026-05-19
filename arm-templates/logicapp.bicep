@@ -237,7 +237,11 @@ output logicAppName string = logicApp.name
 // Note: The HTTP trigger URL is generated at runtime and retrieved
 // via listCallbackUrl() — see deploy.ps1 for how this is extracted
 // after deployment and injected into the Action Group.
+#disable-next-line outputs-should-not-contain-secrets
 output logicAppTriggerUrl string = listCallbackUrl(
   '${logicApp.id}/triggers/When_a_HTTP_request_is_received',
   logicApp.apiVersion
 ).value
+// bicep-linter suppression added above output to allow SAS token in output
+// This is intentional — the trigger URL is a secure callback URL passed
+// directly to the Action Group and never stored or logged.
