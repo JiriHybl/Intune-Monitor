@@ -157,7 +157,7 @@ Expected output: `provisioningState: Succeeded`
 ### Step 3 — Clone the Repository
 
 ```powershell
-git clone https://github.com/<your-org>/intune-monitor.git
+git clone https://github.com/JiriHybl/Intune-Monitor.git
 Set-Location intune-monitor
 ```
 
