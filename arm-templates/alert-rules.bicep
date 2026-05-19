@@ -1,6 +1,6 @@
 // ============================================================
 // alert-rules.bicep — Azure Monitor Log Search Alert Rules
-// Rules: Enrollment Success, Failure, Wipe, Retire, Reset
+// Rules: Enrollment Success, Failure, Wipe, Retire, Delete, Reset (Fresh Start/Autopilot)
 //
 // IMPORTANT: OperationName values in KQL queries must be validated
 // against your tenant data before production deployment.
@@ -145,7 +145,7 @@ resource alertDeviceWipe 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
           query: '''
 IntuneAuditLogs
 | where TimeGenerated > ago(5m)
-| where OperationName =~ "DeviceAction_wipe"
+| where OperationName =~ "Wipe ManagedDevice"
 | extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'["\[\]]', "")
 | extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)
 | project
@@ -198,7 +198,7 @@ resource alertDeviceRetire 'Microsoft.Insights/scheduledQueryRules@2022-06-15' =
           query: '''
 IntuneAuditLogs
 | where TimeGenerated > ago(5m)
-| where OperationName =~ "DeviceAction_retire"
+| where OperationName =~ "Retire ManagedDevice"
 | extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'["\[\]]', "")
 | extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)
 | project
@@ -241,7 +241,7 @@ resource alertDeviceReset 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = 
     displayName: 'Intune — Device Fresh Start or Autopilot Reset'
     description: 'Fires when Fresh Start or Autopilot Reset is initiated on a device.'
     severity: 2
-    enabled: true
+    enabled: false // Not yet observed in this tenant — enable when Autopilot is in use
     evaluationFrequency: evaluationFrequency
     windowSize: windowSize
     scopes: [ logAnalyticsWorkspaceResourceId ]
@@ -252,9 +252,9 @@ resource alertDeviceReset 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = 
 IntuneAuditLogs
 | where TimeGenerated > ago(5m)
 | where OperationName in~ (
-    "DeviceAction_freshStart",
-    "DeviceAction_autopilotReset",
-    "DeviceAction_resetPasscode"
+    "FreshStart ManagedDevice",
+    "AutopilotReset ManagedDevice",
+    "ResetPasscode ManagedDevice"
   )
 | extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'["\[\]]', "")
 | extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)
@@ -285,6 +285,60 @@ IntuneAuditLogs
   }
 }
 
+
+// ── Rule 6: Device Delete ─────────────────────────────────────
+
+resource alertDeviceDelete 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
+  name: 'intune-device-delete'
+  location: location
+  tags: {
+    solution: 'intune-monitor'
+    event: 'device-delete'
+  }
+  properties: {
+    displayName: 'Intune — Device Deleted'
+    description: 'Fires when a device is deleted from Intune. Device record permanently removed.'
+    severity: 1
+    enabled: true
+    evaluationFrequency: evaluationFrequency
+    windowSize: windowSize
+    scopes: [ logAnalyticsWorkspaceResourceId ]
+    criteria: {
+      allOf: [
+        {
+          query: '''
+IntuneAuditLogs
+| where TimeGenerated > ago(5m)
+| where OperationName =~ "Delete ManagedDevice"
+| extend DeviceName  = replace_regex(tostring(todynamic(Properties).TargetDisplayNames), @'["\\[\\]]', "")
+| extend InitiatedBy = tostring(todynamic(Properties).Actor.UPN)
+| project
+    TimeGenerated,
+    DeviceName,
+    InitiatedBy,
+    Result    = ResultType,
+    Category
+          '''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: {
+      actionGroups: [ actionGroupResourceId ]
+      customProperties: {
+        EventType: 'DeviceDelete'
+      }
+    }
+    autoMitigate: false
+  }
+}
+
 // ── Outputs ───────────────────────────────────────────────────
 
 output alertRuleIds array = [
@@ -293,4 +347,5 @@ output alertRuleIds array = [
   alertDeviceWipe.id
   alertDeviceRetire.id
   alertDeviceReset.id
+  alertDeviceDelete.id
 ]
